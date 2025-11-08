@@ -37,7 +37,7 @@ void moveToCurrentTime() {
   struct tm timeinfo;
   Serial.println("Waiting for NTP time...");
   unsigned long start = millis();
-  const unsigned long timeoutMs = 15000; // 15 second timeout
+  const unsigned long timeoutMs = 30000; // 30 second timeout
   // Wait until SNTP provides a time or timeout
   while (!getLocalTime(&timeinfo)) {
     if (millis() - start >= timeoutMs) {
@@ -53,6 +53,10 @@ void moveToCurrentTime() {
   int minute = timeinfo.tm_min;
   int second = timeinfo.tm_sec;
 
+  if (hour >= 12) {
+    hour -= 12; // Convert to 12-hour format
+  }
+
   long totalSeconds = hour*3600 + minute*60 + second;
   long targetStep = totalSeconds * stepsPerSecond;
 
@@ -64,6 +68,8 @@ void moveToCurrentTime() {
 
   Serial.printf("Moved to current time: %02d:%02d:%02d\n", hour, minute, second);
 }
+
+
 
 void setup() {
   Serial.begin(115200);
@@ -85,7 +91,7 @@ void setup() {
   // --- Home the second hand ---
   Serial.println("Homing...");
   Stepper1.setSpeed(800); 
-  while(digitalRead(limitSwitchPin) == HIGH){
+  while(digitalRead(limitSwitchPin) == LOW){
     Stepper1.runSpeed();
   }
   Stepper1.setCurrentPosition(0);
@@ -93,11 +99,15 @@ void setup() {
 
   // --- Move to current time ---
   moveToCurrentTime();
+  //correctDrift();
+  moveToCurrentTime();
 }
 
 void loop() {
   // Run continuously like a second hand
   Stepper1.setSpeed(stepsPerSecond); // 1 rev per 60 seconds
   Stepper1.runSpeed();
+
+
 }
 
